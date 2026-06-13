@@ -1,0 +1,26 @@
+[
+  {
+    "filename": "blank-vial-v1.png",
+    "success": true,
+    "size": 916928,
+    "path": "scripts/mockup/blank-vial-v1.png"
+  },
+  {
+    "filename": "blank-vial-v2.png",
+    "success": true,
+    "size": 942238,
+    "path": "scripts/mockup/blank-vial-v2.png"
+  },
+  {
+    "filename": "blank-vial-v3.png",
+    "success": true,
+    "size": 914377,
+    "path": "scripts/mockup/blank-vial-v3.png"
+  },
+  {
+    "filename": "blank-vial-v4.png",
+    "success": true,
+    "size": 1054647,
+    "path": "scripts/mockup/blank-vial-v4.png"
+  }
+]

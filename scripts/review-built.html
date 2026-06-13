@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Product Image Review — Based Research</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --fg: #1a1a19;
+    --muted: #737373;
+    --border: rgba(0,0,0,0.1);
+    --primary: #1E3A5F;
+    --danger: #dc2626;
+    --success: #16A34A;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    margin: 0;
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding: 16px 0 20px;
+    margin: -24px -24px 20px;
+    padding-left: 24px;
+    padding-right: 24px;
+    border-bottom: 1px solid var(--border);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  h1 {
+    font-family: Georgia, serif;
+    margin: 0;
+    font-size: 22px;
+  }
+  .stats {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .stats b { color: var(--fg); font-weight: 600; }
+  .stats .approved { color: var(--success); }
+  .stats .rejected { color: var(--danger); }
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  button {
+    font: inherit;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  button:hover { background: #f5f5f0; }
+  button.primary { background: var(--primary); color: white; border-color: var(--primary); }
+  button.primary:hover { background: #152b47; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .card.approved { border-color: var(--success); box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.1); }
+  .card.rejected { border-color: var(--danger); box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1); opacity: 0.75; }
+  .card img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+    background: white;
+  }
+  .card-body {
+    padding: 10px 12px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg);
+    margin: 0 0 2px;
+    line-height: 1.3;
+  }
+  .card-slug {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'SF Mono', Consolas, monospace;
+  }
+  .card-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .card-buttons button {
+    padding: 6px 8px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+  .btn-approve {
+    color: var(--success);
+    border-color: rgba(22, 163, 74, 0.3);
+  }
+  .btn-approve:hover { background: rgba(22, 163, 74, 0.08); }
+  .card.approved .btn-approve {
+    background: var(--success);
+    color: white;
+    border-color: var(--success);
+  }
+  .btn-reject {
+    color: var(--danger);
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+  .btn-reject:hover { background: rgba(220, 38, 38, 0.08); }
+  .card.rejected .btn-reject {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+  }
+  .badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: none;
+  }
+  .card.approved .badge.approved-badge {
+    display: block;
+    background: var(--success);
+    color: white;
+  }
+  .card.rejected .badge.rejected-badge {
+    display: block;
+    background: var(--danger);
+    color: white;
+  }
+  #output {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a19;
+    color: #fafaf9;
+    padding: 14px 18px;
+    border-radius: 10px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.25);
+    font-family: 'SF Mono', Consolas, monospace;
+    font-size: 12px;
+    max-width: 90vw;
+    display: none;
+    z-index: 20;
+    cursor: text;
+    user-select: all;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  #output.show { display: block; }
+  .hint {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 6px;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Product Image Review</h1>
+    <div class="stats">
+      <span><b id="total">0</b> total</span>
+      <span class="approved">✓ <b id="approvedCount">0</b> approved</span>
+      <span class="rejected">✗ <b id="rejectedCount">0</b> rejected</span>
+      <span><b id="pendingCount">0</b> pending</span>
+    </div>
+  </div>
+  <div class="actions">
+    <button onclick="approveAll()">Approve All</button>
+    <button onclick="clearAll()">Reset</button>
+    <button class="primary" onclick="showRejected()">Generate Regenerate Command</button>
+  </div>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<div id="output"></div>
+
+<script>
+  // Injected by build step
+  const PRODUCTS = [
+  {
+    "slug": "bpc-157",
+    "name": "BPC-157"
+  },
+  {
+    "slug": "tb-500",
+    "name": "TB-500"
+  },
+  {
+    "slug": "pentadecarginine",
+    "name": "Pentadecarginine"
+  },
+  {
+    "slug": "semaglutide",
+    "name": "Semaglutide"
+  },
+  {
+    "slug": "tirzepatide",
+    "name": "Tirzepatide"
+  },
+  {
+    "slug": "retatrutide",
+    "name": "Retatrutide"
+  },
+  {
+    "slug": "aod-9604",
+    "name": "AOD-9604"
+  },
+  {
+    "slug": "cjc-1295-no-dac",
+    "name": "CJC-1295 (no DAC)"
+  },
+  {
+    "slug": "ipamorelin",
+    "name": "Ipamorelin"
+  },
+  {
+    "slug": "tesamorelin",
+    "name": "Tesamorelin"
+  },
+  {
+    "slug": "sermorelin",
+    "name": "Sermorelin"
+  },
+  {
+    "slug": "ghk-cu",
+    "name": "GHK-Cu"
+  },
+  {
+    "slug": "epithalon",
+    "name": "Epithalon"
+  },
+  {
+    "slug": "nad-plus",
+    "name": "NAD+"
+  },
+  {
+    "slug": "pt-141",
+    "name": "PT-141"
+  },
+  {
+    "slug": "bpc-157-tb-500-blend",
+    "name": "BPC-157 + TB-500 Blend"
+  },
+  {
+    "slug": "cjc-1295-ipamorelin-blend",
+    "name": "CJC-1295 + Ipamorelin Blend"
+  },
+  {
+    "slug": "tesamorelin-ipamorelin-blend",
+    "name": "Tesamorelin + Ipamorelin Blend"
+  },
+  {
+    "slug": "recovery-tri-blend",
+    "name": "Recovery Tri-Blend"
+  },
+  {
+    "slug": "kpv",
+    "name": "KPV"
+  },
+  {
+    "slug": "vip",
+    "name": "VIP (Vasoactive Intestinal Peptide)"
+  },
+  {
+    "slug": "thymalin",
+    "name": "Thymalin"
+  },
+  {
+    "slug": "thymosin-alpha-1",
+    "name": "Thymosin Alpha-1"
+  },
+  {
+    "slug": "dsip",
+    "name": "DSIP"
+  },
+  {
+    "slug": "selank",
+    "name": "Selank"
+  },
+  {
+    "slug": "semax",
+    "name": "Semax"
+  },
+  {
+    "slug": "oxytocin",
+    "name": "Oxytocin"
+  },
+  {
+    "slug": "mots-c",
+    "name": "MOTS-c"
+  },
+  {
+    "slug": "ptd-dbm",
+    "name": "PTD-DBM"
+  },
+  {
+    "slug": "foxo4-dri",
+    "name": "FOXO4-DRI"
+  },
+  {
+    "slug": "cagrilintide",
+    "name": "Cagrilintide"
+  },
+  {
+    "slug": "5-amino-1mq",
+    "name": "5-Amino-1MQ"
+  },
+  {
+    "slug": "ara-290",
+    "name": "ARA-290"
+  },
+  {
+    "slug": "larazotide",
+    "name": "Larazotide"
+  },
+  {
+    "slug": "kisspeptin-10",
+    "name": "Kisspeptin-10"
+  },
+  {
+    "slug": "bacteriostatic-water",
+    "name": "Bacteriostatic Water"
+  },
+  {
+    "slug": "portable-peptide-storage-fridge",
+    "name": "Portable Peptide Storage Fridge"
+  },
+  {
+    "slug": "p21-peptide-spray",
+    "name": "P21 Peptide Spray"
+  },
+  {
+    "slug": "gip-glp1",
+    "name": "GIP/GLP-1"
+  },
+  {
+    "slug": "adamax-spray",
+    "name": "Adamax Spray"
+  },
+  {
+    "slug": "bpc-157-tablets",
+    "name": "BPC-157 Tablets"
+  },
+  {
+    "slug": "peptide-8-2-face-cream",
+    "name": "PEPTIDE 8.2 Advanced Anti-Aging Research Complex"
+  },
+  {
+    "slug": "glow-blend",
+    "name": "Glow Blend"
+  },
+  {
+    "slug": "n-acetyl-semax-selank-blend",
+    "name": "N-Acetyl Semax/Selank Blend"
+  },
+  {
+    "slug": "ss-31-elamipretide",
+    "name": "SS-31 (Elamipretide)"
+  }
+];
+
+  const STORAGE_KEY = 'image-review';
+  const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+  function render() {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    for (const p of PRODUCTS) {
+      const status = state[p.slug];
+      const card = document.createElement('div');
+      card.className = 'card' + (status === 'approved' ? ' approved' : status === 'rejected' ? ' rejected' : '');
+      card.innerHTML = `
+        <span class="badge approved-badge">✓ Approved</span>
+        <span class="badge rejected-badge">✗ Reject</span>
+        <img src="../public/images/products/${p.slug}.webp?t=${Date.now()}" alt="${p.name}" loading="lazy" />
+        <div class="card-body">
+          <div class="card-title">${p.name}</div>
+          <div class="card-slug">${p.slug}</div>
+          <div class="card-buttons">
+            <button class="btn-approve" onclick="setStatus('${p.slug}', 'approved')">Approve</button>
+            <button class="btn-reject" onclick="setStatus('${p.slug}', 'rejected')">Reject</button>
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    }
+    updateStats();
+  }
+
+  function setStatus(slug, status) {
+    if (state[slug] === status) {
+      delete state[slug];
+    } else {
+      state[slug] = status;
+    }
+    save();
+    render();
+  }
+
+  function approveAll() {
+    for (const p of PRODUCTS) state[p.slug] = 'approved';
+    save();
+    render();
+  }
+
+  function clearAll() {
+    if (!confirm('Clear all approve/reject decisions?')) return;
+    for (const key of Object.keys(state)) delete state[key];
+    save();
+    render();
+  }
+
+  function updateStats() {
+    const approved = Object.values(state).filter(v => v === 'approved').length;
+    const rejected = Object.values(state).filter(v => v === 'rejected').length;
+    document.getElementById('total').textContent = PRODUCTS.length;
+    document.getElementById('approvedCount').textContent = approved;
+    document.getElementById('rejectedCount').textContent = rejected;
+    document.getElementById('pendingCount').textContent = PRODUCTS.length - approved - rejected;
+  }
+
+  function showRejected() {
+    const rejected = Object.entries(state).filter(([, v]) => v === 'rejected').map(([k]) => k);
+    const out = document.getElementById('output');
+    if (rejected.length === 0) {
+      out.innerHTML = '<div class="hint">No rejects marked.</div>Nothing to regenerate.';
+    } else {
+      const cmd = rejected.length === 1
+        ? `npx tsx scripts/gen-vials-with-logo-ref.ts ${rejected[0]}`
+        : `for s in ${rejected.join(' ')}; do\n  npx tsx scripts/gen-vials-with-logo-ref.ts $s\ndone`;
+      out.innerHTML = `<div class="hint">Rejected: ${rejected.length} · Click to select · Cmd+C to copy</div>${cmd}`;
+    }
+    out.classList.add('show');
+    out.onclick = () => {
+      const range = document.createRange();
+      range.selectNodeContents(out);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    };
+  }
+
+  render();
+
+  // Keyboard shortcuts: a = approve focused, r = reject focused
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const hovered = document.querySelector('.card:hover');
+    if (!hovered) return;
+    const slug = hovered.querySelector('.card-slug')?.textContent;
+    if (!slug) return;
+    if (e.key === 'a' || e.key === 'A') setStatus(slug, 'approved');
+    if (e.key === 'r' || e.key === 'R') setStatus(slug, 'rejected');
+  });
+</script>
+
+</body>
+</html>

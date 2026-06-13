@@ -1,0 +1,28 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/tracking-status",
+      "schedule": "0 8,12,16,20 * * *"
+    },
+    {
+      "path": "/api/cron/abandoned-carts",
+      "schedule": "15 * * * *"
+    },
+    {
+      "path": "/api/cron/abandoned-order-sms",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/eod-sales-report",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/winback",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-stale-orders",
+      "schedule": "45 */6 * * *"
+    }
+  ]
+}

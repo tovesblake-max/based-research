@@ -1,0 +1,75 @@
+slug,name,size,sku,retail_usd,cogs_usd,gp_usd,gp_pct,flag
+kpv,KPV,10mg,KPV-10,90.00,10.00,80.00,88.9,-
+ss-31-elamipretide,SS-31 (Elamipretide),10mg,SS31-10,160.00,18.00,142.00,88.8,-
+ss-31-elamipretide,SS-31 (Elamipretide),50mg,SS31-50,380.00,60.00,320.00,84.2,-
+epithalon,Epithalon,10mg,EPIT-10,50.00,8.00,42.00,84.0,-
+epithalon,Epithalon,50mg,EPIT-50,170.00,28.00,142.00,83.5,-
+thymalin,Thymalin,10mg,THYM-10,70.00,12.00,58.00,82.9,-
+ara-290,ARA-290,10mg,ARA-10,70.00,12.00,58.00,82.9,-
+ghk-cu,GHK-Cu,50mg,GHK-50,60.00,11.00,49.00,81.7,-
+cjc-1295-no-dac,CJC-1295 (no DAC),10mg,CJC-10,70.00,13.00,57.00,81.4,-
+nad-plus,NAD+,500mg,NAD-500,140.00,26.00,114.00,81.4,-
+tesamorelin,Tesamorelin,5mg,TESA-5,80.00,15.00,65.00,81.2,-
+bpc-157,BPC-157,10mg,BPC-10,90.00,18.00,72.00,80.0,-
+thymosin-alpha-1,Thymosin Alpha-1,5mg,TA1-5,70.00,14.00,56.00,80.0,-
+thymosin-alpha-1,Thymosin Alpha-1,10mg,TA1-10,120.00,24.00,96.00,80.0,-
+mots-c,MOTS-c,10mg,MOTS-10,90.00,18.00,72.00,80.0,-
+mots-c,MOTS-c,40mg,MOTS-40,275.00,58.00,217.00,78.9,-
+ghk-cu,GHK-Cu,100mg,GHK-100,100.00,22.00,78.00,78.0,-
+tesamorelin,Tesamorelin,10mg,TESA-10,130.00,29.00,101.00,77.7,-
+semax,Semax,5mg,SMX-5,40.00,9.00,31.00,77.5,-
+selank,Selank,10mg,SEL-10,70.00,16.00,54.00,77.1,-
+ghrp-2,GHRP-2,5mg,GHRP2-5,35.00,8.00,27.00,77.1,-
+pinealon,Pinealon,10mg,PIN-10,60.00,14.00,46.00,76.7,-
+ghrp-6,GHRP-6,5mg,GHRP6-5,55.00,13.00,42.00,76.4,-
+vip,VIP (Vasoactive Intestinal Peptide),10mg,VIP-10,100.00,24.00,76.00,76.0,-
+oxytocin,Oxytocin,5mg,OXY-5,50.00,12.00,38.00,76.0,-
+glow-blend,Glow Blend,70mg (10mg BPC + 10mg TB + 50mg GHK),GLOW-70,200.00,48.00,152.00,76.0,-
+hexarelin,Hexarelin,5mg,HEX-5,75.00,18.00,57.00,76.0,-
+ll37,LL-37,5mg,LL37-5,75.00,18.00,57.00,76.0,-
+melanotan-1,Melanotan 1,10mg,MT1-10,50.00,12.00,38.00,76.0,-
+melanotan-2,Melanotan 2,10mg,MT2-10,75.00,18.00,57.00,76.0,-
+peg-mgf,PEG-MGF,2mg,PMGF-2,100.00,24.00,76.00,76.0,-
+bpc-157,BPC-157,5mg,BPC-5,45.00,11.00,34.00,75.6,-
+cjc-1295-no-dac,CJC-1295 (no DAC),5mg,CJC-5,45.00,11.00,34.00,75.6,-
+cagrilintide,Cagrilintide,10mg,CAG-10,130.00,32.00,98.00,75.4,-
+glutathione,Glutathione,1500mg,GLU-1500,65.00,16.00,49.00,75.4,-
+kisspeptin-10,Kisspeptin-10,5mg,KP10-5,60.00,15.00,45.00,75.0,-
+klow-blend,Klow Blend,80mg (50/10/10/10mg),KLOW-80,200.00,50.00,150.00,75.0,-
+cjc-1295-with-dac,CJC-1295 (with DAC),5mg,CJCDAC-5,100.00,25.00,75.00,75.0,-
+cjc-1295-with-dac,CJC-1295 (with DAC),10mg,CJCDAC-10,160.00,40.00,120.00,75.0,-
+follistatin-344,Follistatin 344,1mg,FOLLI-1,240.00,60.00,180.00,75.0,-
+ghrp-2,GHRP-2,10mg,GHRP2-10,60.00,15.00,45.00,75.0,-
+ghrp-6,GHRP-6,10mg,GHRP6-10,60.00,15.00,45.00,75.0,-
+snap-8,Snap-8,10mg,SNAP-10,60.00,15.00,45.00,75.0,-
+tb-500,TB-500,10mg,TB5-10,110.00,28.00,82.00,74.5,-
+ipamorelin,Ipamorelin,5mg,IPA-5,45.00,12.00,33.00,73.3,-
+dsip,DSIP,5mg,DSIP-5,45.00,12.00,33.00,73.3,-
+glp3-rta,GIP3,30mg,RTA-30,220.00,60.00,160.00,72.7,-
+bpc-157-tb-500-blend,BPC-157 + TB-500 Blend,20mg (10mg/10mg),BPTB-20,130.00,36.00,94.00,72.3,-
+cjc-1295-ipamorelin-blend,CJC-1295 + Ipamorelin Blend,10mg (5mg/5mg),CJCIPA-10,75.00,21.00,54.00,72.0,-
+glp3-rta,GIP3,15mg,RTA-15,130.00,38.00,92.00,70.8,-
+glp3-rta,GIP3,20mg,RTA-20,170.00,50.00,120.00,70.6,-
+tb-500,TB-500,5mg,TB5-5,60.00,18.00,42.00,70.0,-
+glp3-rta,GIP3,10mg,RTA-10,100.00,30.00,70.00,70.0,-
+5-amino-1mq,5-Amino-1MQ,5mg,5A1M-5,50.00,15.00,35.00,70.0,-
+bpc-157-tb-500-blend,BPC-157 + TB-500 Blend,10mg (5mg/5mg),BPTB-10,80.00,25.00,55.00,68.8,-
+ipamorelin,Ipamorelin,10mg,IPA-10,70.00,22.00,48.00,68.6,-
+tesamorelin-ipamorelin-blend,Tesamorelin + Ipamorelin Blend,15mg (10mg/5mg),TESIPA-15,140.00,44.00,96.00,68.6,-
+pt-141,PT-141,10mg,PT14-10,55.00,18.00,37.00,67.3,-
+tesamorelin-ipamorelin-blend,Tesamorelin + Ipamorelin Blend,10mg (5mg/5mg),TESIPA-10,100.00,34.00,66.00,66.0,-
+sermorelin,Sermorelin,10mg,SERM-10,80.00,28.00,52.00,65.0,-
+sermorelin,Sermorelin,5mg,SERM-5,45.00,16.00,29.00,64.4,-
+aod-9604,AOD-9604,5mg,AOD-5,45.00,22.00,23.00,51.1,-
+bacteriostatic-water,Bacteriostatic Water,10mL,BAC-10,20.00,15.00,5.00,25.0,-
+pentadecarginine,Pentadecarginine,5mg,PENT-5,55.00,,,,UPSELL_ONLY
+recovery-tri-blend,Recovery Tri-Blend,15mg (5mg/5mg/5mg),RTRI-15,120.00,,,,UPSELL_ONLY
+ptd-dbm,PTD-DBM,10mg,PTD-10,180.00,,,,UPSELL_ONLY
+foxo4-dri,FOXO4-DRI,10mg,FOX4-10,300.00,,,,UPSELL_ONLY
+larazotide,Larazotide,10mg,LAR-10,110.00,,,,UPSELL_ONLY
+syringe-kit,Research Syringe Kit,10-pack,SYRINGE-10,12.00,,,,UPSELL_ONLY
+alcohol-swabs,Alcohol Prep Pads,100-pack,SWAB-100,9.00,,,,UPSELL_ONLY
+portable-peptide-storage-fridge,Portable Peptide Storage Fridge,4L,FRIDGE-4L,120.00,,,,NO_COST
+p21-peptide-spray,P21 Peptide Spray,25mg / 10mL,P21-25,180.00,,,,UPSELL_ONLY
+adamax-spray,Adamax Spray,10mg / 10mL,ADAMAX-10,110.00,,,,UPSELL_ONLY
+bpc-157-tablets,BPC-157 Tablets,500mcg × 60 tablets,BPC-TAB-60,175.00,,,,UPSELL_ONLY

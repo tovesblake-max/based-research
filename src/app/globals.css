@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+:root {
+  --background: #FAFAF9;
+  --foreground: #1A1A19;
+  --primary: #1E3A5F;
+  --primary-light: #2A4F7F;
+  --primary-foreground: #FFFFFF;
+  --secondary: #0D9488;
+  --secondary-light: #14B8A6;
+  --secondary-foreground: #FFFFFF;
+  --warm: #D97706;
+  --warm-light: #F59E0B;
+  --warm-foreground: #FFFFFF;
+  --accent: #F5F5F0;
+  --accent-foreground: #1A1A19;
+  --muted: #525252;
+  --muted-foreground: #737373;
+  --border: #E0E0DC;
+  --border-strong: #C8C8C2;
+  --destructive: #DC2626;
+  --success: #059669;
+  --success-light: #34D399;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A19;
+  --footer-bg: #111111;
+  --footer-fg: #E5E5E5;
+  --footer-muted: #888888;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-destructive: var(--destructive);
+  --color-secondary: var(--secondary);
+  --color-secondary-light: var(--secondary-light);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-warm: var(--warm);
+  --color-warm-light: var(--warm-light);
+  --color-warm-foreground: var(--warm-foreground);
+  --color-success: var(--success);
+  --color-success-light: var(--success-light);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-footer-bg: var(--footer-bg);
+  --color-footer-fg: var(--footer-fg);
+  --color-footer-muted: var(--footer-muted);
+  --font-sans: var(--font-outfit);
+  --font-serif: var(--font-dm-serif);
+  --font-mono: var(--font-dm-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans, 'Outfit', system-ui, sans-serif);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--accent);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground);
+}
+
+/* Selection color */
+::selection {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Marquee — used by /text landing page product carousel.
+   Translates the inner track left by 50% (one full copy of the
+   product set), seamlessly loops because we render the set twice. */
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee-x 40s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none; }
+}
