@@ -51,7 +51,7 @@ Decide this per processor. Do not weaken the gate by default.
 
 - **Change what each stage collects:** edit the stage form (`src/app/gate/<stage>/*`) and, for server-validated fields, the matching API route.
 - **Reorder or add/remove a stage:** update `nextGateStage` in `src/lib/gate.ts` and the per-page sequence guards.
-- **Relax to "public browse, gated purchase":** move the catalog/marketing paths into `isPublicBypass` and gate only `/checkout` + `/account`. This is the posture a card processor typically prefers for site review: browse freely (screened by the `AgeGate` modal + RUO labeling), make an account to buy.
+- **Relax to "public browse, gated purchase":** move the catalog/marketing paths into `isPublicBypass` and gate only `/checkout` + `/account`. This is the posture a card processor typically prefers for site review: browse freely (with RUO labeling on every page and a lightweight 21+ interstitial if you want one), make an account to buy.
 
 ## Replicating for a new brand
 

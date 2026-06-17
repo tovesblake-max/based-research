@@ -6,15 +6,16 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SupportBubble from "@/components/SupportBubble";
 import ConsentBanner from "@/components/ConsentBanner";
-import AgeGate from "@/components/AgeGate";
 import ReferralCapture from "@/components/ReferralCapture";
 
 /**
  * Site-wide chrome wrapper. Renders header, footer, and floating
- * widgets (SupportBubble, ConsentBanner, AgeGate, ReferralCapture) for
- * the public storefront — and hides ALL of them
- * on admin surfaces so the admin dashboard fills the viewport without
- * the marketing chrome competing for attention.
+ * widgets (SupportBubble, ConsentBanner, ReferralCapture) for the
+ * storefront — and hides ALL of them on admin + gate surfaces so those
+ * fill the viewport without the marketing chrome competing for attention.
+ *
+ * (21+ age confirmation is handled upstream by the access gate at
+ * /gate/research-use, so there is no client-side age modal here.)
  *
  * Admin paths covered:
  *   /admin            — main dashboard
@@ -29,8 +30,8 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const isAdmin =
     !!pathname && (pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/admin-access"));
-  // The access-gate funnel renders full-screen with no storefront chrome
-  // (and no AgeGate modal stacking on top) — the visitor hasn't entered yet.
+  // The access-gate funnel renders full-screen with no storefront chrome —
+  // the visitor hasn't cleared the gate yet.
   const isGate = !!pathname && (pathname === "/gate" || pathname.startsWith("/gate/"));
 
   if (isAdmin || isGate) {
@@ -44,7 +45,6 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
       <Footer />
       <SupportBubble />
       <ConsentBanner />
-      <AgeGate />
       <Suspense fallback={null}>
         <ReferralCapture />
       </Suspense>

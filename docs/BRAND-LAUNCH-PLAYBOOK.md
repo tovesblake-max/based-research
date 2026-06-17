@@ -541,7 +541,7 @@ This entire vertical operates under a **Research Use Only** doctrine. Every publ
 
 1. **Copy audit on every page** — homepage, product pages, category rollups, advertorials, cart, checkout, emails.
 2. **RUO chip** — visible on every product page (`ProductDetailClient.tsx`), cart drawer, checkout. Add an acknowledgement checkbox on ACH authorization.
-3. **21+ Age gate** — `src/components/AgeGate.tsx` client + **server-enforced cookie** (fix from audit — currently client-only, trivially bypassed).
+3. **21+ age confirmation** — enforced server-side at Stage A of the access gate (`/gate/research-use`), recorded in `gate_leads`. See `docs/compliance-gating.md`.
 4. **Legal pages** — `/legal/terms`, `/legal/privacy`, `/legal/refund`, `/legal/shipping`, `/legal/research-use-only`. All linked from footer.
 5. **Zero reviews / testimonials / ratings** anywhere. No `aggregateRating` in JSON-LD. No star icons. No user-generated content.
 
