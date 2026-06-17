@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-import { IS_OPEN_MODE } from "@/lib/site-mode";
+import { GATE_COOKIE, readGateCookie, nextGateStage } from "@/lib/gate";
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
@@ -31,13 +31,8 @@ const goneUrls = new Set<string>([
   "/product/hgh-fragment-176-191",
   "/product/igf1-lr3",
   "/product/recovery-tri-blend",
-  // 2026-05-21: research-only compliance posture — consumption-infrastructure
-  // SKUs removed entirely. BAC water stays addressable for historical orders
-  // (handled below as a public exception, not 410).
   "/product/syringe-kit",
   "/product/alcohol-swabs",
-  // 2026-05-21 compliance hardening: human-consumption-format products
-  // (nasal sprays, oral tablets) removed — they contradict research-use-only.
   "/product/p21-peptide-spray",
   "/product/adamax-spray",
   "/product/bpc-157-tablets",
@@ -62,7 +57,7 @@ const BLOCKED_UA_PATTERNS = [
   /curl\/[0-7]/i,
 ];
 
-const SENSITIVE_PATHS = ["/checkout", "/account", "/auth", "/api/auth", "/api/checkout"];
+const SENSITIVE_PATHS = ["/checkout", "/account", "/auth", "/api/auth", "/api/checkout", "/gate", "/api/gate"];
 
 function isBlockedUserAgent(ua: string): boolean {
   if (!ua) return true;
@@ -74,118 +69,45 @@ function isAdminPath(pathname: string): boolean {
 }
 
 /**
- * Site-wide gate (2026-05-21).
+ * Site-wide HARD GATE.
  *
- * Required compliance posture: NO customer-facing page renders product
- * information until the visitor has signed in AND verified a phone number.
- * The only public surfaces are the auth flow itself and the bits we need
- * for crawlers / legal / billing / webhooks to function.
+ * Compliance posture: NOTHING on the storefront renders until a visitor has
+ * cleared all three sequential gates and holds a phone-verified session:
+ *   Stage A  /gate/research-use  — research-use-only attestation
+ *   Stage B  /gate/contact       — name + email + phone
+ *   Stage C  /gate/verify        — phone + SMS 2FA + researcher type
  *
- * `isPublicPath` decides what bypasses the gate. Everything else gets
- * redirected:
- *   - no session         → /auth/sign-up  (start the flow)
- *   - session but no
- *     phoneVerified flag → /auth/phone     (finish the flow)
+ * `isPublicBypass` is the ONLY set of paths that render without a verified
+ * session — the gate funnel itself, the auth pages (so returning accounts
+ * can sign in), legal pages, static assets, and crawler/system files. The
+ * catalog, marketing, account, and checkout surfaces are all walled off.
  *
- * Allowed without auth: auth pages, auth API, legal pages, third-party
- * webhooks (ShipStation / cron / your future payment processor),
- * static assets, robots/sitemap/og-image, and the admin gate (which
- * enforces its own auth + role check downstream).
- *
- * Note on /api/track + /api/meta/track + /api/geo: these fire from the
- * auth pages themselves (Pixel, GA, geo headers) and must not be gated
- * or the unauthenticated landing surfaces lose telemetry.
+ * Unverified visitors are redirected to whichever gate stage they still owe
+ * (see nextGateStage); `?redirect=` preserves where they were headed so they
+ * land there once the session is minted.
  */
-function isPublicPath(pathname: string): boolean {
+function isPublicBypass(pathname: string): boolean {
   // Static / framework assets
   if (
     pathname.startsWith("/_next/") ||
     pathname === "/favicon.ico" ||
+    pathname === "/favicon-180.png" ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
     pathname.startsWith("/opengraph-image") ||
     pathname.startsWith("/images/")
   ) return true;
 
-  // Auth pages (sign-in, sign-up, phone, forgot/reset)
+  // The 3-stage gate funnel itself (each stage page self-enforces sequence).
+  if (pathname === "/gate" || pathname.startsWith("/gate/")) return true;
+
+  // Auth pages — returning accounts sign in here (sign-in / phone /
+  // forgot / reset). New visitors are pushed through /gate/* instead.
   if (pathname.startsWith("/auth/")) return true;
 
-  // Auth API
-  if (pathname.startsWith("/api/auth/")) return true;
-
-  // Telemetry that fires on unauthenticated pages (sign-up tracking, etc.)
-  if (
-    pathname === "/api/track" ||
-    pathname === "/api/meta/track" ||
-    pathname.startsWith("/api/meta/") ||
-    pathname === "/api/geo" ||
-    pathname.startsWith("/api/cart-events/") ||
-    pathname === "/api/cart-events"
-  ) return true;
-
-  // Third-party / system webhooks (ShipStation, cron, admin-triggered
-  // jobs, and any payment-processor webhook you add under /api/webhooks/).
-  if (
-    pathname.startsWith("/api/webhooks/") ||
-    pathname.startsWith("/api/shipstation/") ||
-    pathname.startsWith("/api/cron/")
-  ) return true;
-
-  // Public catalog feed for Google Merchant / Meta Commerce importers
-  if (pathname === "/api/gmc/feed.xml" || pathname.startsWith("/api/gmc/")) return true;
-
-  // Legal pages (terms, privacy) must always be reachable per card-network
-  // compliance + browser AutoFill TOS-link patterns.
+  // Legal pages must always be reachable (terms / privacy / RUO / etc.).
   if (pathname.startsWith("/legal/")) return true;
 
-  // ── Public storefront — browse + marketing surfaces (2026-05-21 rev2) ──
-  //
-  // These MUST be publicly reachable. Payment processors and MCC 5169
-  // pre-vet reviewers require a fully functional, publicly ACCESSIBLE
-  // website to verify what's being sold before they approve an account.
-  // A catalog hidden behind a login wall reads as "cannot verify business"
-  // and stalls/declines the application.
-  //
-  // Compliance is preserved WITHOUT hiding the catalog:
-  //   - Age-gate modal (21+ / qualified researcher) layers on top of these
-  //     pages client-side (see AgeGate.tsx).
-  //   - RUO + not-for-consumption labeling is rendered on these pages.
-  //   - RUO attestation checkbox is enforced at signup + checkout.
-  //   - Purchase + account surfaces stay gated below (you browse freely,
-  //     but you must create an account + verify a phone to BUY).
-  //
-  // This is the canonical "public browse, gated checkout" posture that
-  // compliant peptide / RUO merchants use to pass card-processor review.
-  // See docs/compliance-gating.md for the full schematic.
-  if (
-    pathname === "/" ||
-    pathname === "/catalog" ||
-    pathname === "/shop" ||
-    pathname.startsWith("/product/") ||
-    pathname === "/coa" ||
-    pathname.startsWith("/coa/") ||   // static Certificate-of-Analysis PDFs in /public/coa/ — must be publicly downloadable for pre-vet review
-    pathname === "/about" ||
-    pathname === "/faq" ||
-    pathname === "/contact" ||
-    pathname === "/institutional-use" ||   // buyer-eligibility page — must be public so prospective institutional buyers can read it before signing up
-    pathname === "/membership" ||
-    pathname === "/cart" ||
-    pathname.startsWith("/research/") ||
-    pathname.startsWith("/wholesale")
-  ) return true;
-
-  // Admin surfaces handle their own auth + role gating. /admin-access is the
-  // public quick-access entry point that lets an existing admin re-establish
-  // a session without going through the customer-facing auth pages.
-  if (pathname === "/admin-access" || isAdminPath(pathname)) return true;
-
-  // /checkout/callback is the order-status / confirmation page and the
-  // natural redirect target after a payment processor's hosted flow — must
-  // be reachable even if the session cookie was lost during a third-party
-  // redirect round-trip.
-  if (pathname === "/checkout/callback" || pathname.startsWith("/checkout/callback/")) return true;
-
-  // Everything else is gated.
   return false;
 }
 
@@ -201,8 +123,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Bot gate — known scrapers blocked outright; no-UA requests to sensitive
-  // paths blocked too. Runs before the auth check so we don't burn JWT
-  // verification cycles on garbage traffic.
+  // paths blocked too. Runs before auth so we don't burn JWT cycles on junk.
   const ua = request.headers.get("user-agent") || "";
   if (isBlockedUserAgent(ua)) {
     return new NextResponse("Forbidden", {
@@ -217,10 +138,16 @@ export async function middleware(request: NextRequest) {
     });
   }
 
+  // API routes handle their own auth (requireAuth / requireAdmin) and MUST
+  // return JSON, never an HTML redirect. The gate + auth APIs live under
+  // /api and are reachable here; everything else self-gates server-side.
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
+  // ── Parse session ──
   const token = request.cookies.get("br-session")?.value;
-
   let payload: { userId: string; role: string; phoneVerified?: boolean } | null = null;
-
   if (token) {
     try {
       const result = await jwtVerify(token, getJwtSecret());
@@ -229,33 +156,13 @@ export async function middleware(request: NextRequest) {
       // Invalid token — treat as logged-out.
     }
   }
-
-  // Verified = token explicitly says so OR is a LEGACY token minted before
-  // the phoneVerified claim existed (field undefined). Every account in the
-  // DB reached its token through phone verification (both signup paths set
-  // phoneVerified=true; there was no path to a session without it), so an
-  // absent claim is provably a verified user. Only an EXPLICIT `false`
-  // (a fresh token for a genuinely unverified account) gets gated. Without
-  // this, the deploy that introduced the claim bounces every pre-existing
-  // logged-in session to /auth/phone — which looked like the site breaking.
+  // Legacy tokens minted before the phoneVerified claim existed decode
+  // without it; treat absent as verified (they reached a session through
+  // phone verification). Only an explicit `false` is gated.
   const isPhoneVerified = payload ? payload.phoneVerified !== false : false;
+  const hasVerifiedSession = !!payload && isPhoneVerified;
 
-  // API routes handle their own auth (requireAuth / requireAdmin) and MUST
-  // return JSON, never an HTML redirect. Redirecting an /api/ request to
-  // /auth/sign-up is what produced the "Unexpected token '<', <!DOCTYPE"
-  // JSON-parse errors across the admin dashboard (every /api/admin/* fetch
-  // was being bounced to the HTML sign-up page). Skip the page-level gate
-  // for all /api/ — the specific public-API exceptions in isPublicPath are
-  // now redundant but harmless. (The bot gate above still applies.)
-  if (pathname.startsWith("/api/")) {
-    return NextResponse.next();
-  }
-
-  // ── Admin gate ──
-  // /admin and /admin/* require a valid admin-role session. The server-side
-  // admin layout (src/app/admin/layout.tsx) enforces this too — this edge
-  // check is defense-in-depth and means a non-admin never even loads the
-  // dashboard bundle. role is a signed JWT claim, so it can't be forged.
+  // ── Admin gate ── (defense-in-depth; the admin layout re-checks server-side)
   if (isAdminPath(pathname)) {
     if (!payload || payload.role !== "admin") {
       const url = new URL("/auth/sign-in", request.url);
@@ -265,54 +172,34 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ── Auth-page handling ──
-  // Logged-in + verified users on auth pages get bounced to /shop.
-  // Logged-in but explicitly-unverified users are kept on /auth/phone.
-  if (authPaths.some((p) => pathname.startsWith(p)) && payload) {
-    if (isPhoneVerified) {
+  // ── Public bypass paths ──
+  if (isPublicBypass(pathname)) {
+    // A fully-verified visitor has no reason to sit on the gate funnel or
+    // the auth pages — send them into the store.
+    if (
+      hasVerifiedSession &&
+      (pathname === "/gate" ||
+        pathname.startsWith("/gate/") ||
+        authPaths.some((p) => pathname.startsWith(p)))
+    ) {
       return NextResponse.redirect(new URL("/shop", request.url));
     }
-    if (!pathname.startsWith("/auth/phone")) {
-      return NextResponse.redirect(new URL("/auth/phone", request.url));
-    }
-  }
-
-  // Skip the site-wide gate for public paths.
-  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
-  // ── Open-mode guest checkout ──
-  // In "open" site mode, checkout does not require an account — a guest
-  // can go cart → checkout → pay. (Institutional mode keeps checkout
-  // behind sign-in below.) /cart is already public in both modes.
-  // The 21+ age gate and research-use certification still apply at
-  // checkout in open mode — those are compliance, not friction.
-  if (IS_OPEN_MODE && (pathname === "/checkout" || pathname.startsWith("/checkout/"))) {
+  // ── Hard gate ──
+  // Everything else requires a phone-verified session. Returning,
+  // fully-verified users pass straight through.
+  if (hasVerifiedSession) {
     return NextResponse.next();
   }
 
-  // ── Site-wide gate ──
-  // No session → start the sign-up flow. (The apex "/" and all browse
-  // surfaces are now public via isPublicPath, so this only fires for
-  // purchase/account surfaces: /checkout, /account, /affiliate, /track.)
-  if (!payload) {
-    const url = new URL("/auth/sign-up", request.url);
-    url.searchParams.set("redirect", pathname + request.nextUrl.search);
-    return NextResponse.redirect(url);
-  }
-
-  // Session present but EXPLICITLY unverified → finish the flow. Legacy
-  // tokens (claim absent) are treated as verified per isPhoneVerified above,
-  // so existing logged-in users are never bounced by this deploy.
-  if (!isPhoneVerified) {
-    const url = new URL("/auth/phone", request.url);
-    url.searchParams.set("redirect", pathname + request.nextUrl.search);
-    return NextResponse.redirect(url);
-  }
-
-  // All checks passed — render the page.
-  return NextResponse.next();
+  // Not (yet) verified → push into the funnel at the stage they still owe.
+  const gateState = await readGateCookie(request.cookies.get(GATE_COOKIE)?.value);
+  const stage = nextGateStage(gateState);
+  const url = new URL(stage, request.url);
+  url.searchParams.set("redirect", pathname + request.nextUrl.search);
+  return NextResponse.redirect(url);
 }
 
 export const config = {

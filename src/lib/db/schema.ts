@@ -81,6 +81,41 @@ export const users = pgTable("users", {
   index("users_signup_country_idx").on(table.signupCountry),
 ]);
 
+// ── ACCESS-GATE LEADS ──────────────────────────────────────
+// Audit + carry-forward trail for the 3-stage compliance gate that walls
+// off the entire storefront (see src/middleware.ts + src/app/gate/*):
+//   Stage A  research-use-only attestation        → ruoAttestedAt
+//   Stage B  contact capture (name/email/phone)   → contactAt + fields
+//   Stage C  phone + SMS 2FA + researcher type     → linked to userId
+// One row per visitor journey, keyed by the signed `br-gate` cookie's sid.
+// Kept even if the visitor never finishes, so there's a durable record of
+// who attested to RUO and when (IP + UA + country captured at attestation).
+export const gateLeads = pgTable("gate_leads", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  ruoAttestedAt: timestamp("ruo_attested_at"),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 30 }),
+  researcherType: varchar("researcher_type", { length: 40 }),
+  contactAt: timestamp("contact_at"),
+  // Capture-time forensics for the attestation record.
+  ip: varchar("ip", { length: 45 }),
+  userAgent: text("user_agent"),
+  country: varchar("country", { length: 2 }),
+  // Linked once the visitor completes Stage C and an account exists.
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("gate_leads_user_idx").on(table.userId),
+  index("gate_leads_email_idx").on(table.email),
+  index("gate_leads_created_idx").on(table.createdAt),
+]);
+
+export type GateLead = typeof gateLeads.$inferSelect;
+export type NewGateLead = typeof gateLeads.$inferInsert;
+
 // ── AFFILIATES ─────────────────────────────────────────────
 export const affiliates = pgTable("affiliates", {
   id: uuid("id").defaultRandom().primaryKey(),

@@ -167,6 +167,23 @@ CREATE TABLE "email_log" (
 	"sent_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "gate_leads" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"ruo_attested_at" timestamp,
+	"first_name" varchar(100),
+	"last_name" varchar(100),
+	"email" varchar(255),
+	"phone" varchar(30),
+	"researcher_type" varchar(40),
+	"contact_at" timestamp,
+	"ip" varchar(45),
+	"user_agent" text,
+	"country" varchar(2),
+	"user_id" uuid,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "order_items" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"order_id" uuid NOT NULL,
@@ -391,6 +408,7 @@ ALTER TABLE "commissions" ADD CONSTRAINT "commissions_order_id_orders_id_fk" FOR
 ALTER TABLE "coupon_redemptions" ADD CONSTRAINT "coupon_redemptions_coupon_id_coupons_id_fk" FOREIGN KEY ("coupon_id") REFERENCES "public"."coupons"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "coupon_redemptions" ADD CONSTRAINT "coupon_redemptions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "coupon_redemptions" ADD CONSTRAINT "coupon_redemptions_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "gate_leads" ADD CONSTRAINT "gate_leads_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "orders" ADD CONSTRAINT "orders_coupon_id_coupons_id_fk" FOREIGN KEY ("coupon_id") REFERENCES "public"."coupons"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -430,6 +448,9 @@ CREATE INDEX "email_log_to_idx" ON "email_log" USING btree ("to_email");--> stat
 CREATE INDEX "email_log_template_idx" ON "email_log" USING btree ("template");--> statement-breakpoint
 CREATE INDEX "email_log_sent_at_idx" ON "email_log" USING btree ("sent_at");--> statement-breakpoint
 CREATE INDEX "email_log_status_idx" ON "email_log" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "gate_leads_user_idx" ON "gate_leads" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "gate_leads_email_idx" ON "gate_leads" USING btree ("email");--> statement-breakpoint
+CREATE INDEX "gate_leads_created_idx" ON "gate_leads" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "order_items_order_idx" ON "order_items" USING btree ("order_id");--> statement-breakpoint
 CREATE INDEX "orders_user_idx" ON "orders" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "orders_status_idx" ON "orders" USING btree ("status");--> statement-breakpoint

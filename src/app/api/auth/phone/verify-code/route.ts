@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { users, gateLeads } from "@/lib/db/schema";
 import { createToken, setSessionCookie } from "@/lib/auth";
 import { checkVerificationCode, normalizePhone } from "@/lib/twilio";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { GATE_COOKIE, readGateCookie, isValidResearcherType } from "@/lib/gate";
+import { cookies } from "next/headers";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 
@@ -57,12 +59,55 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: msg }, { status: 400 });
     }
 
+    // Researcher type captured on the gate verify form (Stage C).
+    const researcherType = isValidResearcherType(body.researcherType)
+      ? (body.researcherType as string)
+      : null;
+
+    // Load the access-gate lead (Stage A/B data) so the new account inherits
+    // the captured name/email and the RUO attestation timestamp.
+    const gateState = await readGateCookie((await cookies()).get(GATE_COOKIE)?.value);
+    let lead:
+      | { id: string; firstName: string | null; lastName: string | null; email: string | null; ruoAttestedAt: Date | null }
+      | null = null;
+    if (gateState?.sid) {
+      const [row] = await db
+        .select({
+          id: gateLeads.id,
+          firstName: gateLeads.firstName,
+          lastName: gateLeads.lastName,
+          email: gateLeads.email,
+          ruoAttestedAt: gateLeads.ruoAttestedAt,
+        })
+        .from(gateLeads)
+        .where(eq(gateLeads.id, gateState.sid))
+        .limit(1);
+      lead = row || null;
+    }
+    const ruoAckAt = lead?.ruoAttestedAt ?? (researcherType ? new Date() : null);
+
+    // Only attach the gate email to a NEW account, and only if no other
+    // account already owns it (email is unique).
+    let freeEmail: string | null = null;
+    if (lead?.email) {
+      const taken = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, lead.email))
+        .limit(1);
+      if (taken.length === 0) freeEmail = lead.email;
+    }
+
     // Code is valid — find or create the user keyed on phone
     const existing = await db
       .select({
         id: users.id,
         role: users.role,
         phoneVerified: users.phoneVerified,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        researcherType: users.researcherType,
+        researchUseAcknowledgedAt: users.researchUseAcknowledgedAt,
       })
       .from(users)
       .where(eq(users.phone, phoneE164))
@@ -75,13 +120,15 @@ export async function POST(request: Request) {
       userId = existing[0].id;
       role = existing[0].role;
 
-      // Mark phone verified if it wasn't already
-      if (!existing[0].phoneVerified) {
-        await db
-          .update(users)
-          .set({ phoneVerified: true, updatedAt: new Date() })
-          .where(eq(users.id, userId));
-      }
+      // Mark phone verified + backfill any compliance/profile fields the
+      // account is missing (never overwrite values it already has).
+      const patch: Record<string, unknown> = { updatedAt: new Date() };
+      if (!existing[0].phoneVerified) patch.phoneVerified = true;
+      if (!existing[0].researcherType && researcherType) patch.researcherType = researcherType;
+      if (!existing[0].researchUseAcknowledgedAt && ruoAckAt) patch.researchUseAcknowledgedAt = ruoAckAt;
+      if (!existing[0].firstName && lead?.firstName) patch.firstName = lead.firstName;
+      if (!existing[0].lastName && lead?.lastName) patch.lastName = lead.lastName;
+      await db.update(users).set(patch).where(eq(users.id, userId));
     } else {
       // Capture signup geo from Vercel edge headers
       const signupCountry = request.headers.get("x-vercel-ip-country") || null;
@@ -90,17 +137,21 @@ export async function POST(request: Request) {
       const signupCity = signupCityRaw ? decodeURIComponent(signupCityRaw) : null;
       const signupIp = ip === "unknown" ? null : ip;
 
-      // Phone-only "guest" accounts have no email until the user provides one.
-      // Password hash is unusable (starts with "!") so email/password login is impossible.
+      // Phone-verified account. Password hash is unusable (starts with "!")
+      // so email/password login is impossible until the user sets one.
       const unusablePasswordHash = `!${crypto.randomBytes(32).toString("hex")}`;
 
       const [created] = await db
         .insert(users)
         .values({
-          email: null,
+          email: freeEmail,
           passwordHash: unusablePasswordHash,
+          firstName: lead?.firstName ?? null,
+          lastName: lead?.lastName ?? null,
           phone: phoneE164,
           phoneVerified: true,
+          researcherType,
+          researchUseAcknowledgedAt: ruoAckAt,
           signupIp,
           signupCountry,
           signupRegion,
@@ -110,6 +161,15 @@ export async function POST(request: Request) {
 
       userId = created.id;
       role = created.role;
+    }
+
+    // Link the gate lead to the resolved account for the audit trail.
+    if (lead?.id) {
+      await db
+        .update(gateLeads)
+        .set({ userId, researcherType: researcherType ?? undefined, updatedAt: new Date() })
+        .where(eq(gateLeads.id, lead.id))
+        .catch((err) => console.warn("[phone verify] gate-lead link failed", err));
     }
 
     // Issue session — reaching this point means Twilio Verify just

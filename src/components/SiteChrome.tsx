@@ -29,8 +29,11 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const isAdmin =
     !!pathname && (pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/admin-access"));
+  // The access-gate funnel renders full-screen with no storefront chrome
+  // (and no AgeGate modal stacking on top) — the visitor hasn't entered yet.
+  const isGate = !!pathname && (pathname === "/gate" || pathname.startsWith("/gate/"));
 
-  if (isAdmin) {
+  if (isAdmin || isGate) {
     return <main className="flex-1">{children}</main>;
   }
 
